@@ -1,3 +1,4 @@
 /compose/env
 /web/tor/web-roblosats/tor
 /web-roblosats/dist
+__pycache__/
