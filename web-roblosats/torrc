@@ -1,4 +1,5 @@
-SocksPort 0
+# SOCKS for the bridges to onion-only coordinators (bridges.conf), local only.
+SocksPort 127.0.0.1:9050
 # Roblosats web client (general .onion)
 HiddenServiceDir /var/lib/tor/roblosats/
 HiddenServiceVersion 3

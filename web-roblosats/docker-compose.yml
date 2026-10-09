@@ -20,3 +20,11 @@ services:
     volumes:
       - ./dist:/usr/src/web:ro
       - ./nginx.conf:/etc/nginx/roblosats.conf:ro
+      - ./bridges.conf:/etc/nginx/bridges.conf:ro
+  # One socat per onion-only coordinator (see bridges.conf): local port → onion through Tor.
+  bridge-marcanotrades:
+    image: alpine/socat:1.8.0.1
+    container_name: roblosats-bridge-marcanotrades
+    restart: always
+    network_mode: service:tor
+    command: ["TCP-LISTEN:9101,fork,reuseaddr,bind=127.0.0.1", "SOCKS4A:127.0.0.1:olwrnvnukon2lkgqmbdtjfm3vqzadhbtbjmi4abillzjmhwfhhp3mryd.onion:80,socksport=9050"]
