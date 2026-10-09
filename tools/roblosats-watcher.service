@@ -1,0 +1,15 @@
+# ~/.config/systemd/user/roblosats-watcher.service  (then: systemctl --user enable --now roblosats-watcher;
+# loginctl enable-linger $USER so it runs without a login session)
+[Unit]
+Description=Roblosats coordinator watcher (Telegram alerts for disputes, containers and price feed)
+After=network-online.target
+
+[Service]
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=%h/.config/roblosats-watcher.env
+ExecStart=/usr/bin/python3 /path/to/roblosats-deploy/tools/dispute_watcher.py
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=default.target
