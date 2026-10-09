@@ -1,0 +1,5 @@
+SocksPort 0
+# Roblosats web client (general .onion)
+HiddenServiceDir /var/lib/tor/roblosats/
+HiddenServiceVersion 3
+HiddenServicePort 80 127.0.0.1:80

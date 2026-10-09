@@ -1,0 +1,35 @@
+# Kilobot, the first Roblosats coordinator (Bitcoin on the BLAKE2b chain).
+# LND and the BLAKE2b node run on the host (start10, 192.168.0.14); no bitcoind/lnd here.
+#   docker compose -p kilobot --env-file env/kilobot/compose.env \
+#     -f docker-compose.yml -f docker-compose.override-kilobot.yml up -d
+# Image: roblosats:<version>, built from Kilombino/roblosats with Dockerfile.roblosats.
+
+x-roblosats: &roblosats
+  image: roblosats:${ROBLOSATS_TAG:-0.8.7-rl1}
+
+services:
+  tor:
+    ports:
+      - ${WEB_LOCAL_PORT}:80
+
+  robosats:
+    <<: *roblosats
+  daphne:
+    <<: *roblosats
+  clean-orders:
+    <<: *roblosats
+  follow-invoices:
+    <<: *roblosats
+  telegram-watcher:
+    <<: *roblosats
+  celery:
+    <<: *roblosats
+  celery-beat:
+    <<: *roblosats
+
+  bitcoind:
+    profiles: ["unused"]
+  blossom:
+    profiles: ["unused"]
+  backup:
+    profiles: ["unused"]

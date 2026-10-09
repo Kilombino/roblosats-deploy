@@ -1,0 +1,22 @@
+# Roblosats web client: the static app (dist/, built from Kilombino/roblosats) behind nginx,
+# on the general onion and, through the LAN port, on roblosats.kilombino.com (Cloudflare).
+name: roblosats-web
+services:
+  tor:
+    build: ../compose/tor
+    container_name: tor-roblosats-web
+    restart: always
+    ports:
+      - "12598:80"
+    volumes:
+      - ./tor:/var/lib/tor
+      - ./torrc:/etc/tor/torrc
+  web:
+    image: nginx:1.27-alpine
+    container_name: roblosats-web
+    restart: always
+    network_mode: service:tor
+    command: ["nginx", "-c", "/etc/nginx/roblosats.conf"]
+    volumes:
+      - ./dist:/usr/src/web:ro
+      - ./nginx.conf:/etc/nginx/roblosats.conf:ro
