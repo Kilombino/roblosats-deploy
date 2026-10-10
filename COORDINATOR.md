@@ -35,7 +35,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl6 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl8 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
