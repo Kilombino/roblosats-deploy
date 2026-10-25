@@ -35,7 +35,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl11 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl12 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -80,7 +80,9 @@ chmod 600 env/<alias>/*.env
     trust that server with your price. If your coordinator has clearnet access, point
     straight at the venues instead: `https://api.nonkyc.io/api/v2/ticker/BTCB2_USDT` and
     `https://neoxa.exchange/api/exchange/ticker/BTCB2_USDC`. Don't use Neoxa alone in
-    `MARKET_PRICE_APIS` (the old setting): that is one venue.
+    `MARKET_PRICE_APIS` (the old setting): that is one venue. If one venue is down (or the
+    two disagree by more than 10 %), the price stays frozen for an hour
+    (`BTCB2_SINGLE_VENUE_GRACE`), then follows the remaining venue at most 5 % per refresh.
   - `BTCB2_FALLBACK_USD` is used only if no venue answers and there is no stored price yet.
   - PostgreSQL is required (the compose file already runs it): order actions are serialized
     with PostgreSQL advisory locks.
