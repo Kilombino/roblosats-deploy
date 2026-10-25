@@ -35,7 +35,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl8 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl11 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -73,9 +73,17 @@ chmod 600 env/<alias>/*.env
   - Telegram bot, nostr `nsec`, onion and hosts.
   - The values left in place are Kilobot's: fee 0.19%, 3% bond, orders of 101,000–6,000,000
     sats, on-chain payouts for buyers, `DEVFUND=0`. Change them if you want.
-  - Keep `MARKET_PRICE_APIS=https://mempool.kilombino.com/neoxa-ticker`: the BTCB2 price from
-    Neoxa, reachable over Tor. Other fiat currencies are converted with yadio.
-  - `BTCB2_FALLBACK_USD` is used only if that feed stops answering.
+  - Price: `MARKET_PRICE_APIS=https://mempool.kilombino.com/nonkyc-ticker` and
+    `NEOXA_TICKER_URL=https://mempool.kilombino.com/neoxa-ticker`, the BTCB2 price from two
+    venues (NonKYC and Neoxa). Other fiat currencies are converted with yadio. Those URLs are
+    proxies on the Roblosats maintainer's server, because both venues block Tor exits: you
+    trust that server with your price. If your coordinator has clearnet access, point
+    straight at the venues instead: `https://api.nonkyc.io/api/v2/ticker/BTCB2_USDT` and
+    `https://neoxa.exchange/api/exchange/ticker/BTCB2_USDC`. Don't use Neoxa alone in
+    `MARKET_PRICE_APIS` (the old setting): that is one venue.
+  - `BTCB2_FALLBACK_USD` is used only if no venue answers and there is no stored price yet.
+  - PostgreSQL is required (the compose file already runs it): order actions are serialized
+    with PostgreSQL advisory locks.
 - **`compose.env`** — paths and ports.
   - `SUFFIX` (container suffix, e.g. `-<alias>`), data paths, `WEB_LOCAL_PORT`.
   - The same Postgres password as in `robosats.env`.
