@@ -30,12 +30,13 @@ git clone -b roblosats https://github.com/Kilombino/roblosats.git
 ## 2. Build the coordinator image
 
 Build it from the Roblosats source. Do not use the official RoboSats image: the Roblosats
-image adds the BTCB2 price feed, the chain's own fee rates, no devfund, configurable limits and
+image adds the BTCB2 price feed, the chain's own fee rates, a devfund that goes to the Roblosats
+maintainer, configurable limits and
 the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl12 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl13 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -73,6 +74,11 @@ chmod 600 env/<alias>/*.env
   - Telegram bot, nostr `nsec`, onion and hosts.
   - The values left in place are Kilobot's: fee 0.19%, 3% bond, orders of 101,000–6,000,000
     sats, on-chain payouts for buyers, `DEVFUND=0`. Change them if you want.
+  - Devfund: `DEVFUND` is the fraction of each successful order's proceeds sent by keysend to the
+    Roblosats maintainer's node (its key is `devfund_pubkey.json` in Kilombino/roblosats), which pays
+    for keeping Roblosats and its security fixes going. It is optional. With 20% or more your
+    coordinator gets the DevFund badge, and the web lists coordinators that donate first (a draw
+    weighted by the donation) in the order book and as the default host for new orders.
   - Price: `MARKET_PRICE_APIS=https://mempool.kilombino.com/nonkyc-ticker` and
     `NEOXA_TICKER_URL=https://mempool.kilombino.com/neoxa-ticker`, the BTCB2 price from two
     venues (NonKYC and Neoxa). Other fiat currencies are converted with yadio. Those URLs are
