@@ -1,0 +1,41 @@
+{
+  "longAlias": "",
+  "shortAlias": "",
+  "identifier": "",
+  "description": "",
+  "motto": "",
+  "color": "",
+  "established": "",
+  "nostrHexPubkey": "",
+  "contact": {
+    "telegram": "",
+    "nostr": "",
+    "simplex": "",
+    "email": "",
+    "website": ""
+  },
+  "badges": {
+    "isFounder": false,
+    "donatesToDevFund": 0,
+    "hasGoodOpSec": true,
+    "hasLargeLimits": false
+  },
+  "policies": {
+    "Privacy Policy": ""
+  },
+  "mainnet": {
+    "onion": "http://<56 chars>.onion",
+    "clearnet": null,
+    "i2p": null
+  },
+  "testnet": {
+    "onion": null,
+    "clearnet": null,
+    "i2p": null
+  },
+  "mainnetNodesPubkeys": [
+    "<node id 66 hex>"
+  ],
+  "testnetNodesPubkeys": [],
+  "federated": true
+}
