@@ -28,3 +28,9 @@ services:
     restart: always
     network_mode: service:tor
     command: ["TCP-LISTEN:9101,fork,reuseaddr,bind=127.0.0.1", "SOCKS4A:127.0.0.1:olwrnvnukon2lkgqmbdtjfm3vqzadhbtbjmi4abillzjmhwfhhp3mryd.onion:80,socksport=9050"]
+  bridge-rosegarden:
+    image: alpine/socat:1.8.0.1
+    container_name: roblosats-bridge-rosegarden
+    restart: always
+    network_mode: service:tor
+    command: ["TCP-LISTEN:9102,fork,reuseaddr,bind=127.0.0.1", "SOCKS4A:127.0.0.1:fvdl26sy3yquqp5ft5p6gkwf3utztghncqcz5vjg62cwsurr2yyjluid.onion:80,socksport=9050"]
