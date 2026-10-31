@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.7-rl13 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl18 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -75,7 +75,7 @@ chmod 600 env/<alias>/*.env
   - The values left in place are Kilobot's: fee 0.19%, 3% bond, orders of 101,000–6,000,000
     sats, on-chain payouts for buyers, `DEVFUND=0`. Change them if you want.
   - Devfund: `DEVFUND` is the fraction of each successful order's proceeds sent by keysend to the
-    Roblosats maintainer's node (its key is `devfund_pubkey.json` in Kilombino/roblosats), which pays
+    Roblosats maintainer's node (`DEVFUND_PUBKEY`, or if empty the image's `devfund_pubkey.json`), which pays
     for keeping Roblosats and its security fixes going. It is optional. With 20% or more your
     coordinator gets the DevFund badge, and the web lists coordinators that donate first (a draw
     weighted by the donation) in the order book and as the default host for new orders.
@@ -196,5 +196,16 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl18 (RoboSats v0.8.8)
+
+- Back up the database first (`docker exec sql-<alias> pg_dump -U <user> <db> | gzip > backup.sql.gz`).
+  Going back to an older image needs that dump: the upgrade converts the order logs to JSON.
+- The first service that starts applies migrations 0058–0061 (under a database lock) and
+  migration 0061 converts every order's log, so no history is lost.
+- New optional variables: `DEVFUND_PUBKEY`, `DEVFUND_COMMUNITY`, `DEVFUND_COMMUNITY_ADDRESS`
+  (see the sample `robosats.env`).
+- After starting, check `/api/info` (version 0.8.8), the admin panel and
+  `docker exec rs-<alias> python3 manage.py audit_payouts`.
 
 Questions: https://t.me/roblosats
