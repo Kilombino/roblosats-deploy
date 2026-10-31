@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl19 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl20 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -197,10 +197,11 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
 
-### To 0.8.8-rl19
+### To 0.8.8-rl20
 
-Fixes the HTTP 500 when a buyer submits the payout invoice on rl18. No new migrations:
-rebuild from tag `v0.8.8-rl19`, set `ROBLOSATS_TAG`, restart. Coming from rl15/rl17, follow
+Fixes the HTTP 500 when a buyer submits the payout invoice on rl18 (rl19) and the trade screen
+not redrawing after an action (rl20). No new migrations:
+rebuild from tag `v0.8.8-rl20`, set `ROBLOSATS_TAG`, restart. Coming from rl15/rl17, follow
 the rl18 steps below.
 
 ### To 0.8.8-rl18 (RoboSats v0.8.8)
