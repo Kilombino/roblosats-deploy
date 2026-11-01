@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl21 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl22 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -154,7 +154,10 @@ everything* or *trade completed*. Every resolution asks for confirmation first a
 receives how many sats; it runs the same admin actions as before (*maker wins* / *taker wins*
 etc. are still in the order list's action menu). The panel follows your browser language
 (English, Spanish, German, French, Italian, Portuguese, Russian, Simplified Chinese, Japanese);
-there is a selector at the top of the page.
+there is a selector at the top of the page. Opening a disputed order from the order list takes
+you to its dispute page; add `?raw=1` to the URL (or use the link at the bottom of the dispute
+page) for the full Django form. The list has three views: `?view=open` (default),
+`?view=waiting` (both statements in, waiting for your decision) and `?view=history`.
 
 ## 7. Before asking to join
 
@@ -203,6 +206,13 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl22
+
+Server only, no migrations, no new variables. rl21 added the dispute panel (section 6) and the
+*Send a message to maker / taker* action; rl22 opens disputed orders on that panel and adds the
+open / waiting / history views, which the sidebar now links to. Same steps as rl21 below, with
+tag `v0.8.8-rl22`.
 
 ### To 0.8.8-rl21
 
