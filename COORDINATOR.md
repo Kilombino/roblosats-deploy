@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl20 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl21 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -146,8 +146,15 @@ WATCH_ONION=<yourvanity>.onion
 Then install `tools/roblosats-watcher.service` as a user service (instructions inside the file).
 Send `/start` to your bot once, or Telegram won't let it message you.
 
-Disputes are resolved in the admin panel (`/coordinator/api/order/<id>/change/`) with the
-*maker wins* / *taker wins* actions, after reading both statements.
+Disputes are handled on the dispute panel: `/coordinator/api/order/disputes/` lists the open
+and past ones, and `/coordinator/api/order/<id>/dispute/` shows who buys and who sells, both
+statements, the chat each party attached, and lets you write to the buyer, the seller or both
+(app notification, Nostr DM, Telegram) and resolve with *buyer wins*, *seller wins*, *return
+everything* or *trade completed*. Every resolution asks for confirmation first and says who
+receives how many sats; it runs the same admin actions as before (*maker wins* / *taker wins*
+etc. are still in the order list's action menu). The panel follows your browser language
+(English, Spanish, German, French, Italian, Portuguese, Russian, Simplified Chinese, Japanese);
+there is a selector at the top of the page.
 
 ## 7. Before asking to join
 
@@ -196,6 +203,15 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl21
+
+Server only, no migrations, no new variables. Adds the dispute panel (section 6) and the
+*Send a message to maker / taker* action in the order list. Messages reach the robots with the
+prefix `<COORDINATOR_ALIAS> coordinator (order N): `, so check that `COORDINATOR_ALIAS` is set.
+Telegram and webhook delivery go through Celery, so the `celery` service must be running.
+Rebuild from tag `v0.8.8-rl21`, set `ROBLOSATS_TAG`, restart with no order in progress.
+Coming from rl18/rl19, nothing else to do; from rl15/rl17, follow the rl18 steps below.
 
 ### To 0.8.8-rl20
 
