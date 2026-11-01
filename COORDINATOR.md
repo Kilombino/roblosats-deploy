@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl22 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl23 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -206,6 +206,13 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl23
+
+No migrations, no new variables, no server change. The web client the image ships now starts new
+coordinators at a 25M sats order limit instead of 250k sats (your own `MAX_ORDER_SIZE` still
+applies). Optional: rebuild from tag `v0.8.8-rl23`, set `ROBLOSATS_TAG`, restart with no order in
+progress.
 
 ### To 0.8.8-rl22
 
