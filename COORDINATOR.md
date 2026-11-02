@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl24 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl25 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -206,6 +206,13 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl25
+
+No migration and no new variables. `/api/chat/` now accepts an `offset` with decimals: apps in
+Nostr chat mode sent one from the second message on, and the coordinator dropped its copy of
+those messages (so disputes had no chat). Rebuild from tag `v0.8.8-rl25` (or pull
+`ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl25`), set `ROBLOSATS_TAG`, restart.
 
 ### To 0.8.8-rl24
 
