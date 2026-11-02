@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl23 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl24 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -206,6 +206,15 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl24
+
+One migration (`0062`, runs by itself when the server starts): the BTC/Spamcoin rate is kept with
+8 decimals instead of 4 (it moved in ~2 % steps), and orders paid in Spamcoin get their Spamcoin
+amount fixed when the taker's bond locks, so both sides see the same number. No new variables.
+Back up the database, rebuild from tag `v0.8.8-rl24` (or pull
+`ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl24`), set `ROBLOSATS_TAG`, restart with no order
+in progress.
 
 ### To 0.8.8-rl23
 
