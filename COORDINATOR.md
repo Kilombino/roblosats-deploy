@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl25 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl26 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -206,6 +206,21 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl26
+
+Coordinator panel only (no app change). One small migration in `roblosats_admin` (runs by itself
+at start). New in the panel:
+- A readable page for every order (`/coordinator/api/order/<id>/summary/`, "📄 View" column in
+  the order list); disputed orders still open the dispute page.
+- **Telegram alerts** (side menu, superusers): your bot token, chat id, language and a switch per
+  event (order published, taken, escrow locked, finished, cancelled/expired, dispute opened,
+  dispute chat, coordinator message), with a test button. Stored in the database: no variables
+  and no restart. If you already had `TELEGRAM_COORDINATOR_CHAT_ID`, dispute alerts keep working
+  and are not sent twice.
+- Home and side menu translated into the panel's 9 languages.
+Rebuild from tag `v0.8.8-rl26` (or pull `ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl26`),
+set `ROBLOSATS_TAG`, restart all the coordinator containers (Celery must load the new task).
 
 ### To 0.8.8-rl25
 
