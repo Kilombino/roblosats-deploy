@@ -6,6 +6,8 @@
 
 x-roblosats: &roblosats
   image: roblosats:${ROBLOSATS_TAG:-0.8.7-rl1}
+  # Since 0.8.7-rl9 (23 oct 2026) the security hardening is in the image itself
+  # (no bind-mounted files; old ones kept in env/hardening as reference).
 
 services:
   tor:

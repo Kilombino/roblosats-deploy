@@ -36,7 +36,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl26 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl27 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -206,6 +206,15 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl27
+
+Coordinator panel only (no app change, no migration). The order page now says who won a resolved
+dispute, what the coordinator earned, the routing fee of the payout (and the txid and mining fee of
+an on-chain payout), links to every payment, and a "Chat between them" section (how many messages
+each side wrote and when; contents stay encrypted). With only one dispute waiting, the home's
+banner and card open it directly. Rebuild from tag `v0.8.8-rl27` (or pull
+`ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl27`), set `ROBLOSATS_TAG` and restart.
 
 ### To 0.8.8-rl26
 
