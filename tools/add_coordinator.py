@@ -154,7 +154,10 @@ Next:
   1. git -C {a.src} diff; commit on branch roblosats; new rl tag + release (server and app)
   2. web: copy the new build to web-roblosats/dist; docker compose -f web-roblosats/docker-compose.yml up -d
   3. Kilobot: new image (the API serves federation.json too) when no order is in status 6-11
-  4. app (Android, Umbrel, StartOS): new versions with the federation inside""")
+  4. app (Android, Umbrel, StartOS): new versions with the federation inside
+  5. relays: add ws://{e["mainnet"]["onion"].removeprefix("http://")}/relay to Kilobot's
+     compose/env/kilobot/relay.federation_urls.txt and to the Umbrel coordinator app's
+     federation_urls.txt (umbrel-store tools/roblosats-coordinator, then build-hook.py)""")
 
 
 if __name__ == "__main__":

@@ -192,11 +192,17 @@ Open an issue at https://github.com/Kilombino/roblosats/issues containing:
 Also include:
 
 - a 200×200 avatar;
-- a message signed by your node:
-  `lncli signmessage "Roblosats coordinator <alias>: <onion>"`.
+- a message signed by your node, with your onion host (no `http://`):
+  `lncli signmessage "Roblosats federation: <yourvanity>.onion"`.
 
-Once it's reviewed, you are added to `federation.json` and ship in the next web and app
-release.
+On Umbrel, the Roblosats Coordinator app does all of this from its tile (**Join the
+federation**): your node signs, and the issue opens filled in with the entry above.
+
+Once it's reviewed, you are added to `federation.json` (with `tools/add_coordinator.py`) and
+ship in the next web and app release. Until then robots can still use your coordinator by
+adding its onion under Coordinators, but the Roblosats apps and webs don't list it. Your
+coordinator's Nostr key is its identity in the federation: back it up; with a new key you
+would have to be added again.
 
 ## Updating
 
