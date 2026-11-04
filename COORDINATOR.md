@@ -19,7 +19,12 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
-this guide for how a coordinator works.
+this guide for how a coordinator works. Their Settings start from Kilobot's values (fee 0.19 %, maker
+share 10.5 %, orders 101,000 to 100,000,000 sats, on-chain payouts 101,000 to 6,000,000 sats) and show
+them as *Recommended*; lower the largest order to what your channels carry. Their **Backup** page
+exports one file encrypted with a passphrase (OpenPGP, AES-256: onion keys, Nostr key, secrets,
+settings and a database dump) and imports it onto a new install, on Umbrel or StartOS, bringing the
+coordinator back with the same onion and Nostr key. Never run the old and the restored one at once.
 
 ## What you need
 
@@ -181,6 +186,9 @@ page) for the full Django form. The list has three views: `?view=open` (default)
 - [ ] At least one real trade went through end to end.
 - [ ] The watcher messaged you; you can stop a container briefly to test it.
 - [ ] Your LND has a backup: seed on paper plus `channel.backup` copied off the machine.
+- [ ] The coordinator itself has a backup off the machine: the onion's keys (`HiddenServiceDir`),
+      `robosats.env` (`SECRET_KEY`, `NOSTR_NSEC`) and a database dump (on Umbrel/StartOS: the
+      page's **Backup → Export**). Losing the onion or the Nostr key means a new identity.
 - [ ] You never restart the coordinator while an order is in progress (status 6–11). Check
       with:
       `docker exec rs-<alias> python3 manage.py shell -c "from api.models import Order;print(Order.objects.filter(status__in=range(6,12)).count())"`
