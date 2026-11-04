@@ -7,6 +7,20 @@ buyer, and it resolves disputes. It earns a small fee on every trade.
 
 This guide sets one up the way Kilobot, the first coordinator, runs.
 
+On a home node there is a packaged coordinator with the same server, relay, onion and setup page:
+
+- **Umbrel**: the Roblosats Coordinator app of the Kilombino store
+  ([Kilombino/umbrel-store](https://github.com/Kilombino/umbrel-store)), with Lightning Fork and a
+  BLAKE2b node from the PaulsCode.Com store.
+- **StartOS 0.4 (Start9)**: the Roblosats Coordinator package of the Kilombino registry
+  (`https://registry.kilombino.com`,
+  [Kilombino/roblosats-coordinator-startos](https://github.com/Kilombino/roblosats-coordinator-startos)).
+  Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
+  (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
+
+Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
+this guide for how a coordinator works.
+
 ## What you need
 
 - **LND on the BLAKE2b chain** with well-connected channels:
@@ -195,7 +209,7 @@ Also include:
 - a message signed by your node, with your onion host (no `http://`):
   `lncli signmessage "Roblosats federation: <yourvanity>.onion"`.
 
-On Umbrel, the Roblosats Coordinator app does all of this from its tile (**Join the
+On Umbrel and StartOS, the Roblosats Coordinator app does all of this from its page (**Join the
 federation**): your node signs, and the issue opens filled in with the entry above.
 
 Once it's reviewed, you are added to `federation.json` (with `tools/add_coordinator.py`) and
