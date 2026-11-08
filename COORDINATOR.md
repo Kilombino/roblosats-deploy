@@ -55,7 +55,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl27 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl28 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -234,6 +234,25 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl28
+
+Coordinator panel only (no app change, no migration). New in the panel:
+
+- **Penalize the seller / the buyer (no trade)**, two more ways to resolve a dispute (also as
+  changelist actions `penalize_maker` / `penalize_taker`). For when one side simply does not show
+  up: the escrow goes back to whoever sent it and the other side gets its bond back, both as
+  rewards to withdraw from the app; the guilty side's bond stays with the coordinator. Unlike
+  "buyer/seller wins", nobody receives trade sats they did not pay for.
+- **Outcome** section on a resolved dispute: what each party received as a reward, whether they
+  have already withdrawn it, and what they lost (bond, escrow).
+- **Failed payouts** page (sidebar, with a counter; home card and banner): orders whose Lightning
+  payment to the buyer is failing (status 15), and a history of those that went through it. For
+  each one, the invoices the buyer submitted, the failed attempts and their reason, and the node
+  each invoice goes to (and its route hints), decoded by your LND. The order page shows the same.
+
+Rebuild from tag `v0.8.8-rl28` (or pull `ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl28`),
+set `ROBLOSATS_TAG` and restart.
 
 ### To 0.8.8-rl27
 
