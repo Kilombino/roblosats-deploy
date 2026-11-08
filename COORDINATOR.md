@@ -55,7 +55,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl28 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl29 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -234,6 +234,17 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl29
+
+Server only (no app change, no migration). Disputes are no longer resolved automatically
+(RoboSats upstream, "Remove automatic dispute resolution"). Until now, when an order's chat
+timed out, the server could decide the dispute by itself if one party had written nothing in the
+chat. With the chat over Nostr the coordinator does not see every message, so that could punish
+someone who did write. Now every dispute, opened by a party or by the timeout, takes the bonds and
+the escrow into custody and waits for your decision in the dispute panel. Rebuild from tag
+`v0.8.8-rl29` (or pull `ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl29`), set
+`ROBLOSATS_TAG` and restart. It includes everything in rl28.
 
 ### To 0.8.8-rl28
 
