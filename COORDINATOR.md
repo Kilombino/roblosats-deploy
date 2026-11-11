@@ -55,7 +55,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl29 .
+docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl30 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -234,6 +234,18 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### To 0.8.8-rl30
+
+Server and app, no migration. When the lightning payout to a buyer fails (order in "Failed
+lightning network routing"), the buyer can switch to an onchain address from that screen. It is
+offered only if you have onchain payouts on (`DISABLE_ONCHAIN = False`) and the amount fits your
+`MIN_SWAP_AMOUNT`/`MAX_SWAP_AMOUNT` and onchain liquidity; the swap fee is the usual one. Before
+paying onchain the server cancels the lightning payout, asks LND whether any attempt is still in
+flight or already paid (and refuses if so), and checks the escrow again; `audit_payouts` reports
+any order paid both ways. LND only: on CLN the switch is always refused. Rebuild from tag
+`v0.8.8-rl30` (or pull `ghcr.io/kilombino/roblosats-coordinator:0.8.8-rl30`), set
+`ROBLOSATS_TAG` and restart. It includes everything in rl29.
 
 ### To 0.8.8-rl29
 
