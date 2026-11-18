@@ -12,7 +12,7 @@ services:
       - ./tor:/var/lib/tor
       - ./torrc:/etc/tor/torrc
   web:
-    image: nginx:1.27-alpine
+    image: nginx:1.31.9-alpine
     container_name: roblosats-web
     restart: always
     network_mode: service:tor
