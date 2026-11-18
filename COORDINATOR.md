@@ -18,8 +18,8 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators are still on 0.8.8-rl30 (Lightning only); 0.9.0 is for now a source build
-(below).
+The packaged coordinators run Roblosats 0.9.3 (Lightning-only by default; on-chain escrow is an
+optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
 this guide for how a coordinator works. Their Settings start from Kilobot's values (fee 0.19 %, maker
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.0 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.3 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -269,6 +269,7 @@ To turn it on, add to `robosats.env` (the sample has the block, commented) and r
 | `ESCROW_DEV_FEE_PERCENT` / `ESCROW_DEV_ADDRESS` | Optional: this percent of your on-chain fees goes to that address in the release. Off unless both are set; never leaves your own output below the minimum. |
 | `ESCROW_PENALTY_FEE_RATE` / `ESCROW_PENALTY_MIN_FEE_RATE` / `ESCROW_PENALTY_MAX_FEE_PCT` | Mining fee of a bond penalty: sat/vB (default 10), its floor (1) and a cap as a percent of the bond (10). |
 | `ESCROW_RESCUE_MIN_FEE_RATE` / `ESCROW_RESCUE_MAX_FEE_RATE` | Mining fee range of the pre-signed rescue (2–20 sat/vB), fixed when the deposit is planned. |
+| `ESCROW_MIN_DEPOSIT_FEE_RATE` | Lowest fee rate of the deposit, sat/vB (default `1`, since 0.9.3). The deposit is planned at the current rate; when a trader's funding (the amount it was shown) is a little short of that, the deposit pays the highest rate the funding covers, down to this floor, instead of asking the trader to pay again. |
 | `ESCROW_LIGHTNING_TAKER` / `ESCROW_BUYER_FEE_FROM_BOND` | Allow taking on-chain orders with Lightning, and take the buyer's fee and mining share from its on-chain bond (both `True` by default). |
 
 Then check `/api/info/` shows `"onchain_escrow": true`, make a small on-chain order between two of
@@ -288,6 +289,28 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.3
+
+**Recommended for every coordinator that offers on-chain orders** (0.9.0–0.9.2 can leave an
+on-chain order stuck before the deposit: "the seller's funding is short by N sats" on every loop,
+when the seller sent exactly the amount it was shown). Server and app, **no migration**; from 0.9.0
+it is only a new image.
+
+1. Dump the database as below and rebuild from tag `v0.9.3`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.3 .`
+2. Set `ROBLOSATS_TAG=0.9.3` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+3. Check `/api/info/` (`version` 0.9.3).
+
+What changes: a short deposit funding pays a lower fee rate (`ESCROW_MIN_DEPOSIT_FEE_RATE`, default
+1 sat/vB) instead of stalling; taking an on-chain order on-chain after a cancelled Lightning take
+works (the server answers `take_lightning: false`, which also fixes 0.9.2 apps; a bond key on a
+Lightning take is refused); the order page tells the app what already confirmed at its funding
+address (`escrow_funding_confirmed_sats`); and when a robot's signature (rescue, deposit or release)
+is still missing after 90 seconds, the robot is reminded once per step by Telegram, Nostr or
+webhook. Rollback: set `ROBLOSATS_TAG=0.9.0` again (same schema).
+
+Coming from 0.8.8-rl30, do the 0.9.0 steps below with the 0.9.3 tag.
 
 ### Upgrading to 0.9.0
 
