@@ -18,6 +18,9 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
+The packaged coordinators are still on 0.8.8-rl30 (Lightning only); 0.9.0 is for now a source build
+(below).
+
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
 this guide for how a coordinator works. Their Settings start from Kilobot's values (fee 0.19 %, maker
 share 10.5 %, orders 101,000 to 100,000,000 sats, on-chain payouts 101,000 to 6,000,000 sats) and show
@@ -55,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.8.8-rl30 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.0 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -226,6 +229,57 @@ adding its onion under Coordinators, but the Roblosats apps and webs don't list 
 coordinator's Nostr key is its identity in the federation: back it up; with a new key you
 would have to be added again.
 
+## On-chain escrow (optional, off by default)
+
+Since 0.9.0 a coordinator can also offer **non-custodial on-chain orders**. The trade sits in a
+2-of-3 Taproot output on the BLAKE2b chain (seller, buyer, coordinator), the bonds are on-chain
+too, and each trader's app signs with keys derived from its robot token:
+
+- a normal trade is released by the seller and the buyer together; a dispute by the winner and
+  you; a collaborative cancel returns everything;
+- before the deposit is signed, both apps pre-sign a **fair rescue** that pays each side its own
+  share after `ESCROW_RESCUE_CSV` blocks, so the funds never depend on you staying online; an
+  on-chain bond has its own refund path after 540 blocks;
+- your fee is charged only when a trade completes, in one output of at least
+  `ESCROW_MIN_COORDINATOR_FEE_SATS` for the whole order; cancels give it back;
+- a robot that breaks the rules loses its bond through a penalty transaction to your address;
+  the innocent side gets its reward share as usual;
+- an on-chain order can also be taken with Lightning (hybrid): a Lightning buyer pays its fee from
+  its payout; a Lightning seller turns the order into a Lightning order (its escrow by hold
+  invoice) and pays the buyer's swap to on-chain.
+
+**Lightning-only coordinators need no change.** `ONCHAIN_ESCROW` is `False` by default; then
+`/api/info` does not announce `onchain_escrow` and the apps hide every on-chain option for your
+coordinator. Everything else in 0.9.0 (fixed-price and "丰 sat" orders, past orders, final summary,
+fixes) works without it.
+
+To turn it on, add to `robosats.env` (the sample has the block, commented) and restart:
+
+| Setting | What it is |
+| --- | --- |
+| `ONCHAIN_ESCROW` | `True` to offer on-chain orders. |
+| `ESCROW_SECRET` | 32 random bytes in hex (`openssl rand -hex 32`). Your escrow and bond keys are derived from it **and from `COORDINATOR_ALIAS`**. Back it up with your onion and Nostr keys. Never change the secret or the alias while an on-chain order is open: you could no longer co-sign it (the traders would have to wait for their rescue). Without a secret on-chain stays off. |
+| `ESCROW_COORDINATOR_ADDRESS` | An address of **your own** wallet on the BLAKE2b chain. Coordinator fees and bond penalties are paid to it. Required. |
+| `ESCROW_WATCH_WALLET` | Name of a watch-only descriptor wallet (default `roblosats-escrow`) that the server creates and fills by itself on the node of `BITCOIND_RPCURL` / `BITCOIND_RPCUSER` / `BITCOIND_RPCPASSWORD`, to follow bond and deposit addresses and the mempool. That node must be a **BLAKE2b** node with wallet support enabled, and the RPC user must be allowed the wallet calls (`createwallet`, `loadwallet`, `importdescriptors`, `listunspent`) plus `getrawtransaction`, `gettxout`, `getmempoolentry`, `estimatesmartfee` and `sendrawtransaction`. `txindex=1` is recommended. It holds no private keys. |
+| `ESCROW_MIN_SATS` / `ESCROW_MAX_SATS` | Size of on-chain orders in sats (default `MIN_ORDER_SIZE` / `MAX_ORDER_SIZE`). Kilobot started with 20,000–101,000. |
+| `ESCROW_RESCUE_CSV` | Blocks after the deposit confirms before the pre-signed rescue is valid. Default and Kilobot: `2016`. |
+| `ESCROW_FUNDING_SECONDS` / `ESCROW_BOND_SECONDS` | Time to fund the deposit / pay an on-chain bond (default 3 hours each). |
+| `ESCROW_ALLOWED_ROBOTS` | `''` (default) = every robot. A comma list of nicknames, hash ids or Nostr keys keeps on-chain orders private to those robots (out of the public book and Nostr), for testing with your own robots first. |
+| `ESCROW_MIN_COORDINATOR_FEE_SATS` | Smallest coordinator fee for a completed on-chain trade, default `1000`, split between both sides in the proportion of your fees. |
+| `ESCROW_DEV_FEE_PERCENT` / `ESCROW_DEV_ADDRESS` | Optional: this percent of your on-chain fees goes to that address in the release. Off unless both are set; never leaves your own output below the minimum. |
+| `ESCROW_PENALTY_FEE_RATE` / `ESCROW_PENALTY_MIN_FEE_RATE` / `ESCROW_PENALTY_MAX_FEE_PCT` | Mining fee of a bond penalty: sat/vB (default 10), its floor (1) and a cap as a percent of the bond (10). |
+| `ESCROW_RESCUE_MIN_FEE_RATE` / `ESCROW_RESCUE_MAX_FEE_RATE` | Mining fee range of the pre-signed rescue (2–20 sat/vB), fixed when the deposit is planned. |
+| `ESCROW_LIGHTNING_TAKER` / `ESCROW_BUYER_FEE_FROM_BOND` | Allow taking on-chain orders with Lightning, and take the buyer's fee and mining share from its on-chain bond (both `True` by default). |
+
+Then check `/api/info/` shows `"onchain_escrow": true`, make a small on-chain order between two of
+your own robots (with `ESCROW_ALLOWED_ROBOTS` set to them) and only then open it to everyone. The
+admin panel (`/coordinator`) shows every on-chain order: the Escrow column and filters in the order
+list, a summary of trades in progress, sats held, penalties and fees, the orders that need
+attention (deposit window ending, payment in the mempool with a low fee, missing signatures,
+rescue timelock reached), and on each order page the escrow and bonds with explorer links. Disputes
+of on-chain orders are resolved from the same dispute panel. `audit_payouts` checks on-chain
+penalties too.
+
 ## Updating
 
 Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To update:
@@ -234,6 +288,31 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.0
+
+Server and app; **database migrations** (api 0063–0069: on-chain escrow and bonds, Lightning taker,
+fixed price, bond coins, "丰 sat" orders, seller-paid swap). They run by themselves at start
+(`migrate_locked`); all new columns have defaults.
+
+1. Make sure no order is in progress (status 6–11, 13, 15 or 16), then dump the database:
+   `docker exec sql-<alias> sh -c 'pg_dumpall -U "$POSTGRES_USER"' | gzip > pre-0.9.0.sql.gz`.
+2. Rebuild from tag `v0.9.0`: `docker build -f Dockerfile.roblosats -t roblosats:0.9.0 .`
+3. Set `ROBLOSATS_TAG=0.9.0` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+4. Check `/api/info/` (`version` 0.9.0) and `docker exec rs-<alias> python3 manage.py audit_payouts`.
+
+Nothing else is needed to stay Lightning-only: on-chain orders stay off until you configure the
+section above. What changes for a Lightning-only coordinator: fixed-price orders (`fixed_price` in
+`/api/info`, the price no longer needs your exchange rate), "丰 sat" orders (amount in sats, paid in
+any currency), past orders (`/api/pastorders/`) and a final summary of each order for its robots,
+reward withdrawals that fail before leaving (for example an invoice of your own node) refunded
+instead of an error, and the slashed-bond rule fixed so the innocent side, not the faulty one, gets
+the reward. Users of older apps keep working; they are asked to update.
+
+Rollback: the 0.8.8-rl30 image cannot create orders on the 0.9.0 schema (some new columns have no
+database default). Before any on-chain order exists, either run
+`docker exec rs-<alias> python3 manage.py migrate api 0062` and then set `ROBLOSATS_TAG` back to
+`0.8.8-rl30`, or stop the coordinator, restore the dump and set the old tag.
 
 ### To 0.8.8-rl30
 
