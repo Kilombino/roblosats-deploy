@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.3 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.5 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.3 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.5 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -290,6 +290,30 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
 
+### Upgrading to 0.9.5 (and 0.9.4)
+
+Server and app, **no migration**; from 0.9.0 or later it is only a new image. 0.9.5 includes 0.9.4.
+
+1. Dump the database as below and rebuild from tag `v0.9.5`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.5 .`
+2. Set `ROBLOSATS_TAG=0.9.5` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+3. Check `/api/info/` (`version` 0.9.5).
+
+What changes in 0.9.5: the cooperative on-chain release (trade or collaborative cancel) is signed by
+the seller alone through its leaf with the coordinator; the coordinator adds its signature and
+broadcasts (`escrow_release_leaf` action, `escrow_release_leaf_ok` in the order data). The buyer signs
+nothing and nobody has to come back for a second round. Releases started with the two-round MuSig2
+signing (older apps) can be finished the same way when the seller opens the order with 0.9.5. New
+mixed orders where the buyer took with Lightning use the seller's own rescue (the buyer has nothing
+inside the escrow), so the buyer signs nothing on-chain. Older escrows keep their plans and older
+apps keep working.
+
+What changes in 0.9.4: a notice for every step of an order (Telegram, Nostr and webhook with the new
+`action_needed` field, in English, Spanish or Catalan) and reminders 30 and 10 minutes before every
+deadline a robot has to meet.
+
+Rollback: set `ROBLOSATS_TAG=0.9.3` again (same schema).
+
 ### Upgrading to 0.9.3
 
 **Recommended for every coordinator that offers on-chain orders** (0.9.0–0.9.2 can leave an
@@ -310,7 +334,7 @@ address (`escrow_funding_confirmed_sats`); and when a robot's signature (rescue,
 is still missing after 90 seconds, the robot is reminded once per step by Telegram, Nostr or
 webhook. Rollback: set `ROBLOSATS_TAG=0.9.0` again (same schema).
 
-Coming from 0.8.8-rl30, do the 0.9.0 steps below with the 0.9.3 tag.
+Coming from 0.8.8-rl30, do the 0.9.0 steps below with the 0.9.5 tag.
 
 ### Upgrading to 0.9.0
 
