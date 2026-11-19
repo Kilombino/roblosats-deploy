@@ -306,8 +306,9 @@ broadcasts it only from the bond's release (never while it can be penalized or i
 and falls back to the manual return otherwise. The final summary shows each onchain payout and
 release as in the mempool or confirmed (asks the node, cached). A "丰 sat" order whose only
 methods are Spamcoin is normalized to Spamcoin (currency 1000) at a premium and refused with a
-fixed price in another currency. Rollback: set `ROBLOSATS_TAG=0.9.5` again (the new column is
-ignored by the older code).
+fixed price in another currency. Rollback: first undo the migration with the 0.9.7 image
+(`docker exec <alias>-robosats python manage.py migrate api 0069`), then set
+`ROBLOSATS_TAG=0.9.5` again; the older code cannot create bonds while the new column exists.
 
 ### Upgrading to 0.9.5 (and 0.9.4)
 
