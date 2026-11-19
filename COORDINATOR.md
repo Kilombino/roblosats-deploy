@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.7 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.8 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.7-1 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.8 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,23 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.8
+
+Server and app, **no migrations** (an order in progress survives the update; Kilobot was updated
+with an onchain order waiting for its escrow deposit).
+
+1. Dump the database as below and rebuild from tag `v0.9.8`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.8 .`
+2. Set `ROBLOSATS_TAG=0.9.8` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+3. Check `/api/info/` (`version` 0.9.8).
+
+What changes: when another taker locks first (a Lightning bond locks in seconds, an onchain one
+needs a confirmation), the other pending onchain takes end at once; their bonds are freed (never
+penalized; one still in the mempool becomes free to return when it confirms) and their robots get
+a notice. A robot whose take is over sees only its bond on the order page and takes it back from
+there. Two onchain taker bonds locking in the same pass go to the robot that took first. Rollback:
+set `ROBLOSATS_TAG=0.9.7-1` again.
 
 ### Upgrading to 0.9.7-1
 
