@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.7 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.7-1 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,23 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.7-1
+
+Server only (the apps stay at 0.9.7): coordinator panels and alerts. **One migration of the admin
+app (`roblosats_admin` 0002: three alert switches and the table of alerts already sent)**; update
+with no order in an active step.
+
+1. Dump the database as below and rebuild from tag `v0.9.7-1`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.7-1 .`
+2. Set `ROBLOSATS_TAG=0.9.7-1` in `compose.env` and run `./coordinator.sh <alias> up -d`
+   (`beat` too: it runs the new watcher every minute).
+3. Admin panel → Telegram alerts: switch on "On-chain orders" and/or "Your node's on-chain wallet"
+   if you want them. The first pass of the watcher only remembers what already exists, so turning
+   them on never floods the chat with old movements. `ALERT_NOTABLE_FEE_SATS` (default 2000) sets
+   what counts as a high mining fee.
+4. Rollback to 0.9.7: `docker compose run --rm <service> python3 manage.py migrate roblosats_admin 0001`
+   with the 0.9.7-1 image first, then go back to the 0.9.7 image.
 
 ### Upgrading to 0.9.7
 
