@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.5 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.7 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.5 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.7 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,25 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.7
+
+Server and app. **One migration (0070, `auto_return` on onchain bonds): update with no order in
+progress** (check the admin for orders in an active step first).
+
+1. Dump the database as below and rebuild from tag `v0.9.7`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.7 .`
+2. Set `ROBLOSATS_TAG=0.9.7` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+3. Check `/api/info/` (`version` 0.9.7) and that `showmigrations api` lists 0070.
+
+What changes: a free onchain bond goes back by itself. The owner gives a return address (or its
+payout address is used) and its app pre-signs the return with the penalty; the coordinator
+broadcasts it only from the bond's release (never while it can be penalized or is in a deposit),
+and falls back to the manual return otherwise. The final summary shows each onchain payout and
+release as in the mempool or confirmed (asks the node, cached). A "丰 sat" order whose only
+methods are Spamcoin is normalized to Spamcoin (currency 1000) at a premium and refused with a
+fixed price in another currency. Rollback: set `ROBLOSATS_TAG=0.9.5` again (the new column is
+ignored by the older code).
 
 ### Upgrading to 0.9.5 (and 0.9.4)
 
