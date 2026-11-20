@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.9 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.9-1 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.9 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.9-1 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,32 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.9-1
+
+Server only (the apps stay at 0.9.9), **no migrations**: an order in progress survives the update.
+Recommended for every coordinator with on-chain escrow enabled: before it, the dispute page could
+not resolve any on-chain dispute.
+
+1. Dump the database as below and rebuild from tag `v0.9.9-1`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.9-1 .`
+2. Set `ROBLOSATS_TAG=0.9.9-1` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+3. Open a dispute page in the panel: the buttons of an on-chain dispute are no longer greyed out.
+
+What changes:
+- The dispute page checks what an on-chain escrow needs (the escrow confirmed, the bonds inside it
+  or the Lightning bond of a hybrid order, the trader's address) and the confirmation says, with
+  the same numbers the release will use, who gets how many sats at which address, whose app must
+  sign (the winner's; the seller's for "return everything"), and what you keep. After deciding,
+  the page shows whose signature is still missing, then the release and its status. "Penalize"
+  and "Trade completed" stay Lightning-only.
+- A hybrid order whose Lightning taker bond was settled when the dispute opened gets that bond back
+  as rewards on "return everything" (it was kept before).
+- Apps: the trader who does not sign a dispute release now sees "waiting for the other trader"
+  instead of "signing together", and the final summary waits until the release is broadcast.
+- The panel is also in Catalan (`?lang=ca`).
+
+Rollback: set `ROBLOSATS_TAG=0.9.9` again.
 
 ### Upgrading to 0.9.9
 
