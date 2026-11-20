@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.8 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.9 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.8 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.9 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,34 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.9
+
+Server and app. One migration, **0071, that only records validators** (`sqlmigrate api 0071` is a
+no-op: no change to the database); an order in progress survives the update (Kilobot was updated
+with a trade in the chat).
+
+1. Dump the database as below and rebuild from tag `v0.9.9`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.9 .`
+2. Set `ROBLOSATS_TAG=0.9.9` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+3. Check `/api/info/` (`version` 0.9.9) and that the start no longer says "Your models in app(s):
+   'api' have changes that are not yet reflected in a migration".
+
+What changes:
+- Payout, refund and bond return addresses can also be legacy (1…) and P2SH (3…). Every output
+  to a trader's address uses the dust threshold of its type at your node's `dustrelayfee`
+  (`getmempoolinfo`; `ESCROW_DUST_RELAY_FEE`, default 3000 sat/kvB, when the node does not say),
+  never below 330, so segwit and taproot outputs keep their thresholds.
+- A seller whose app says so gets its leftover funding at its payout/refund address inside the
+  deposit (below that address's dust it goes to the miners); `ESCROW_CHANGE_TO_PAYOUT=False`
+  turns it off. The recommended funding counts one shared output with fee plan 2.
+- Fair deadline: when a trader finishes its part of the on-chain setup, or the deposit is built,
+  the other gets at least `ESCROW_PEER_STEP_SECONDS` (3600), at most
+  `ESCROW_MAX_DEADLINE_EXTENSIONS` (6) times per order.
+- The admin order and dispute pages list the traders' addresses and every deposit and release
+  output with its type; the on-chain Telegram alerts name where a release or return went.
+
+Rollback: set `ROBLOSATS_TAG=0.9.8` again (0071 can stay: it changed nothing in the database).
 
 ### Upgrading to 0.9.8
 
