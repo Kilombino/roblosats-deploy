@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.9-1 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.10 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.9-1 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.10 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,41 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.10
+
+Server and app, **no migrations**: an order in progress survives the update.
+
+1. Dump the database as below and rebuild from tag `v0.9.10`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.10 .`
+2. Optional settings in `robosats.env`:
+   - `CLEARNET_ORDER_URL`: if your coordinator has a web client on clearnet, the base of its order
+     pages, e.g. `https://roblosats.kilombino.com/order/kilobot` (the order id is added). Robots
+     then get that link next to the onion one in Telegram, Nostr and webhook notices, and your
+     Telegram alerts carry it too. Leave it empty without a clearnet client (only `https://`).
+   - `PAYOUT_MIN_FEE_RATE` (default 1): lowest sat/vB for an on-chain swap payout (it was a fixed
+     2). LND sends whole sat/vB and lifts 1 to its own floor (~1.01 sat/vB).
+3. Set `ROBLOSATS_TAG=0.9.10` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+
+What changes:
+- On-chain disputes: "Penalize the seller / buyer (no trade)" and "Trade completed" now work on
+  chain. Penalize: the release goes through the seller's leaf (the seller's app signs), the seller
+  gets the trade amount back, each trader its fee, the innocent side its bond plus the reward
+  share (`SLASHED_BOND_REWARD_SPLIT`) of the guilty bond, and you the rest of that bond (your
+  output pays the mining fee when it can). Trade completed: through the buyer's leaf (the buyer's
+  app signs), exactly the cooperative release, and the order ends successful once broadcast. The
+  dispute page says who signs and who gets what at which address, as for the other decisions.
+- Robots are told about each of those decisions in en/es/ca.
+- Your Telegram alerts: the "N sats for M Spamsats" line and the node's refusal of a bond return
+  are in the alerts' language.
+- `audit_payouts` counts ledger credits that are not in the order logs (`swap_surcharge_back`,
+  `dispute_bond_back`), so they no longer show as withdrawals nobody credited.
+- An invalid address now gets the node's reason ("Invalid address (Invalid checksum …)").
+- Apps 0.9.10 (no server change needed for these): the chat reconnects when a relay socket drops
+  (it stayed empty on Android), typed addresses are checked and confirmed before they are sent,
+  and orders keep refreshing while a dispute release is pending.
+
+Rollback: set `ROBLOSATS_TAG=0.9.9-1` again (no migrations).
 
 ### Upgrading to 0.9.9-1
 
