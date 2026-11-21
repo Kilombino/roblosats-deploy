@@ -1,0 +1,11 @@
+# Coordinators whose order events (kind 38383) this relay stores, and whose ratings (31986) it keeps.
+# relay-fedlist.py (run hourly on the host) keeps this list in step with the official
+# federation.json. Add a line "manual" to stop the updates; with no
+# pubkeys at all the relay accepts every order.
+# Source: federation.json (nostrHexPubkey).
+67c0fa4b4ec75abc5139fe6362cdc88f29e8e565d5212284612f0fbcc0cd7f1b  # kilobot
+799c1ec0872c5a1b05d4aff31b517572d393eec1923d3c41e55f2a59e3edf322  # marcanotrades
+a9574b4229d30a8b067e38299341c652b3e3956169d278ee29e2e4087dba9da5  # rosegarden
+# Kinds accepted from other relays by sync (the rest only from direct publishes). No 1059: a peer
+# relay that also syncs with another federation would hand us that federation's chat wraps.
+sync-kinds 38383 31986

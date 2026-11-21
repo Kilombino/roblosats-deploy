@@ -19,7 +19,8 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
 The packaged coordinators run Roblosats 0.9.11 (Lightning-only by default; on-chain escrow is an
-optional section of their Settings).
+optional section of their Settings), Umbrel 0.9.11-1 and StartOS 0.9.11:1 with the
+[relay federation filter](#relay-federation-filter) on.
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
 this guide for how a coordinator works. Their Settings start from Kilobot's values (fee 0.19 %, maker
@@ -229,6 +230,57 @@ adding its onion under Coordinators, but the Roblosats apps and webs don't list 
 coordinator's Nostr key is its identity in the federation: back it up; with a new key you
 would have to be added again.
 
+## Relay federation filter
+
+Your relay syncs with the other coordinators' relays, and some of them also sync with other
+networks (RoboSats, Mostro...). Without a filter their order events end up in your relay, and from
+there in the Roblosats apps' book. The filter keeps the relay to this federation:
+
+- order events (kind 38383) only when signed by a coordinator of `federation.json`;
+- ratings (kind 31986) only of those coordinators;
+- from other relays by sync, only the kinds in the list's `sync-kinds` line (`38383 31986`: no
+  chat wraps 1059, which carry no federation mark). What robots publish straight to your relay
+  (chats, account recovery) is not touched.
+
+The list (`allowed-order-pubkeys.txt`: one hex pubkey per line, `#` comments, the `sync-kinds`
+line) follows the official `federation.json` by itself: every hour `relay-fedlist.py` fetches it,
+checks it (64-hex keys, a sane count, your own coordinator kept) and rewrites the pubkey lines only
+if the set changed. On any failure the last good list stays, never an empty one; a line `manual` in
+the list stops the updates. A new coordinator is therefore accepted within the hour of being added
+to `federation.json`, with nothing to do on your side.
+
+**Umbrel and StartOS** (Roblosats Coordinator 0.9.11-1 / 0.9.11:1 on): on by default. The list is
+`allowed-order-pubkeys.txt` in the relay's data (Umbrel: `data/relay/`), checked from the relay's
+sync; your own coordinator is always in it, even before `federation.json` lists it. Orders of other
+federations stored before are dropped once.
+
+**Docker Compose**: opt in with the files in `compose/relay/federation-filter/`:
+
+1. Copy `allowed-order-pubkeys.txt`, `write-policy.pl`, `sync_federation.sh` and
+   `sync_external.sh` to `env/<alias>/` and mount them on the `relay` service in your override:
+   ```yaml
+   relay:
+     volumes:
+       - ./env/<alias>/write-policy.pl:/etc/strfry/write-policy.pl:ro
+       - ./env/<alias>/allowed-order-pubkeys.txt:/etc/strfry/allowed-order-pubkeys.txt:ro
+       - ./env/<alias>/sync_external.sh:/etc/strfry/sync_external.sh:ro
+       - ./env/<alias>/sync_federation.sh:/etc/strfry/sync_federation.sh:ro
+   ```
+2. In your strfry config set `writePolicy { plugin = "/etc/strfry/write-policy.pl" }`, then
+   recreate only the relay: `./coordinator.sh <alias> up -d --no-deps relay`.
+3. Run `relay-fedlist.py` hourly on the host (cron or a systemd timer), with `--in-place`: the list
+   is a single-file bind mount, so it must be rewritten in place (same inode), not replaced:
+   ```
+   python3 relay-fedlist.py --in-place --require-own --own <your hex pubkey> \
+     --url https://raw.githubusercontent.com/Kilombino/roblosats/roblosats/frontend/static/federation.json \
+     --list env/<alias>/allowed-order-pubkeys.txt
+   ```
+   (`--tg-token-file/--tg-token-var/--tg-chat` add a Telegram message when the list changes.)
+
+The plugin re-reads the list when it changes; the sync scripts read it on every run. Note that
+strfry answers OK to an event it already has without asking the plugin, so purge what is already
+stored (`strfry delete --filter '{"kinds":[38383],"authors":[...]}'`) after turning it on.
+
 ## On-chain escrow (optional, off by default)
 
 Since 0.9.0 a coordinator can also offer **non-custodial on-chain orders**. The trade sits in a
@@ -289,6 +341,12 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Roblosats Coordinator 0.9.11-1 (Umbrel) / 0.9.11:1 (StartOS)
+
+Packaging only, same server image: the relay federation filter, on by default (see
+[Relay federation filter](#relay-federation-filter)). Compose coordinators can opt in with the
+files in `compose/relay/federation-filter/`.
 
 ### Upgrading to 0.9.11
 
