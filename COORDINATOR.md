@@ -342,6 +342,79 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
 
+### Upgrading to 0.9.12
+
+Server and app, **one migration** (`0072`: `OnchainBond.penalty_ladder`, `OnchainBond.wrong_chain`
+and `OnchainEscrow.wrong_chain`, all with database defaults): an order in progress survives the
+update, a dispute in progress too.
+
+1. Dump the database as below and rebuild from tag `v0.9.12`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.12 .`
+2. Optional settings in `robosats.env` (defaults shown):
+   - `ESCROW_PENALTY_RATES=1,3`: the cheaper rungs of a bond's penalty (below its cap,
+     `ESCROW_PENALTY_FEE_RATE`).
+   - `ESCROW_PENALTY_TARGET_BLOCKS=6`, `ESCROW_PENALTY_BUMP_SECONDS=7200`: which rung goes out
+     and when a stuck one is replaced.
+   - `ESCROW_DISPUTE_BOND_SAFETY_BLOCKS=144`: how many blocks before a bond's own timelock a
+     disputed on-chain bond is penalized anyway (never more than a quarter of that timelock).
+   - `SPAMCHAIN_WATCH=True`, `SPAMCHAIN_ESPLORA_URL=https://mempool.space/api`,
+     `SPAMCHAIN_WATCH_SECONDS=600`, `SPAMCHAIN_WATCH_DAYS=14`, `SPAMCHAIN_USE_TOR` (= `USE_TOR`):
+     the wrong-chain watch below.
+3. Set `ROBLOSATS_TAG=0.9.12` in `compose.env` and run `./coordinator.sh <alias> up -d`
+   (`migrate` runs at start-up).
+
+What changes:
+- **On-chain bonds are no longer penalized when a dispute opens.** Lightning hold invoices are
+  still settled at once (their HTLCs could force-close your channels), but a bond on chain can
+  wait. In an on-chain order both bonds are already inside the escrow output, nothing is
+  broadcast at the opening and your decision's release splits them, as before. In a hybrid
+  order where a Lightning seller took an on-chain BUY ("Mixed B"), the maker's on-chain bond used
+  to be penalized at the opening at the penalty's cap (order #29: 1,500 of 30,000 sats to the
+  miners). Now it stays locked until you decide:
+  - the maker keeps it (buyer wins, return everything, penalize the seller, trade completed): it
+    goes **straight back to the maker on chain** (the return it signed in advance, at the
+    cheapest rung the mempool needs; otherwise their app's "Get my bond back"). It is **not**
+    credited as a reward any more;
+  - the maker loses it (seller wins, penalize the buyer): it is penalized **at your decision**.
+  The dispute page says which of the two happens for each decision.
+- **Safety:** if a dispute stays open until fewer than `ESCROW_DISPUTE_BOND_SAFETY_BLOCKS` remain
+  before the bond's refund timelock (counted from its confirmation), the bond is penalized
+  anyway (the order stays in dispute; a maker you then find for is credited the bond's value as a
+  reward). If the owner already took it back alone after the timelock, the order log says so and
+  nothing is penalized. Telegram alerts (on-chain group) tell you about both.
+- **Penalty fee ladder.** 0.9.12 apps sign each bond's penalty at `ESCROW_PENALTY_RATES` too; you
+  broadcast the cheapest rung your node expects within `ESCROW_PENALTY_TARGET_BLOCKS` and replace
+  it (RBF, same inputs) after `ESCROW_PENALTY_BUMP_SECONDS` or when the estimate rises. Rewards
+  and proceeds are still counted on what the top rung pays (the least you get). Older apps and
+  bonds locked before the update keep their single penalty at the cap.
+- Order logs written by two parts of the server at once are no longer lost (a penalty's txid
+  was missing from #29's log).
+
+- **Payments on the wrong chain (Spamcoin, SHA-256).** Both chains use the same addresses, so a
+  wallet of the other chain happily pays a bond or escrow funding address (Kilobot order #28: a
+  30,000-sat bond paid with Spamcoin, never seen). A new celery beat task (`spamchain_watch`,
+  every `SPAMCHAIN_WATCH_SECONDS`, 600) asks an Esplora API of the SHA-256 chain
+  (`SPAMCHAIN_ESPLORA_URL`, default `https://mempool.space/api`; through Tor when `USE_TOR`, or
+  `SPAMCHAIN_USE_TOR`) about the addresses of on-chain bonds and escrow funding addresses still in
+  play (`SPAMCHAIN_WATCH_DAYS`, 14). Each payment found there is logged on the order, the robot is
+  told (Telegram/Nostr/webhook, en/es/ca) how to take it back, and you get a Telegram alert in the
+  on-chain group. `SPAMCHAIN_WATCH=False` turns it off (it sends those addresses to that explorer,
+  over Tor if you use it). You never sign anything for those coins: the robot takes them back
+  alone with the app's "Recover without the coordinator" (Spamchain mode), from the funding address
+  at any time and from the bond address after its timelock. A cooperative early return was left out
+  on purpose: the BLAKE2b chain also accepts the plain BIP341 signature (its anti-replay sighash is
+  opt-in), so a coordinator signature meant for the other chain could free a real bond on ours.
+- Apps 0.9.12 show "Pay with BTC (BLAKE2b) only" next to every on-chain address and QR they ask to
+  pay, and explain the take race better (a losing taker's bond comes back; the winner is told at
+  once).
+
+A dispute opened before the update whose hybrid maker bond was already penalized at the opening
+is decided as in 0.9.11: a maker who keeps the bond is credited its value as a reward.
+
+Rollback: set `ROBLOSATS_TAG=0.9.11` again. Migration `0072` can stay (the column has a database
+default, 0.9.11 ignores it). Disputes opened under 0.9.12 with a hybrid maker bond still locked
+must then be decided by hand: 0.9.11 would credit that bond as a reward without penalizing it.
+
 ### Roblosats Coordinator 0.9.11-1 (Umbrel) / 0.9.11:1 (StartOS)
 
 Packaging only, same server image: the relay federation filter, on by default (see
