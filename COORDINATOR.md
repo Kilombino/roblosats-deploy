@@ -18,7 +18,7 @@ On a home node there is a packaged coordinator with the same server, relay, onio
   Install Bitcoin Knots (BLAKE2b) Companion and Lightning Fork from Paul's registry
   (`https://start9.paulscode.com`) first, create the Lightning Fork wallet, then install it.
 
-The packaged coordinators run Roblosats 0.9.10 (Lightning-only by default; on-chain escrow is an
+The packaged coordinators run Roblosats 0.9.11 (Lightning-only by default; on-chain escrow is an
 optional section of their Settings).
 
 Both still need what is listed below (channels, a synced node, time for disputes); read the rest of
@@ -58,7 +58,7 @@ the Roblosats web client.
 
 ```sh
 cd roblosats
-docker build -f Dockerfile.roblosats -t roblosats:0.9.10 .
+docker build -f Dockerfile.roblosats -t roblosats:0.9.11 .
 ```
 
 Use the tag of the release you are building. Then set `ROBLOSATS_TAG` in `compose.env` to the
@@ -289,6 +289,39 @@ Roblosats follows RoboSats releases (see `ROBLOSATS.md` in the source repo). To 
 2. Rebuild the image with a new tag.
 3. Set `ROBLOSATS_TAG`.
 4. Run `./coordinator.sh <alias> up -d`, **with no order in progress**.
+
+### Upgrading to 0.9.11
+
+Server and app, **no migrations**: an order in progress survives the update.
+
+1. Dump the database as below and rebuild from tag `v0.9.11`:
+   `docker build -f Dockerfile.roblosats -t roblosats:0.9.11 .`
+2. Set `ROBLOSATS_TAG=0.9.11` in `compose.env` and run `./coordinator.sh <alias> up -d`.
+
+What changes:
+- **Nostr order book.** When an order left the book (expired, cancelled, taken), its replacement
+  event carried the order's expiration, already past for an expired order: strfry refused it
+  ("invalid: event expired") and clients kept listing the old order until its own expiration. The
+  replacement now lives at least `NOSTR_CLOSED_EVENT_TTL` seconds (3600) from now, the status is
+  the NIP-69 one (`expired`, `canceled`, `in-progress`, `success`; an expired order said
+  `success`), and a NIP-09 deletion (kind 5, `a` tag) follows for relays that honour it.
+- **Automatic bond returns: a fee ladder** (on-chain escrow). The return the owner pre-signs used
+  the penalty's rate (up to `ESCROW_PENALTY_FEE_RATE`, 10 sat/vB), so it paid ten times too much
+  with a quiet mempool. 0.9.11 apps also sign it at `ESCROW_AUTO_RETURN_RATES` (default `1,3`,
+  below the penalty's rate); you broadcast the cheapest rung your node expects within
+  `ESCROW_AUTO_RETURN_TARGET_BLOCKS` (6) and, if it is still unconfirmed after
+  `ESCROW_AUTO_RETURN_BUMP_SECONDS` (7200) or the estimate rose above it, the next one replaces it
+  (RBF, same inputs). Bonds signed before, and older apps (they sign only the top rung), keep the
+  single return.
+- **Clearnet mode (beta) in the Android app.** Off by default ("Tor only"). A user who turns it on
+  reaches the coordinators whose `mainnet.clearnet` is set in `federation.json` directly over HTTPS
+  (requests and the `/relay/` websocket), so the app opens without waiting for Tor; every other
+  coordinator, and every onion, stays on Tor. If you publish a clearnet URL, those users' requests
+  arrive from their own IP (through your tunnel or reverse proxy), not from Tor: the admin panel
+  must stay closed on clearnet as before, and your logs now hold IPs for them. Nothing to change on
+  the server; to be reached directly, send your clearnet URL to be added to `federation.json`.
+
+Rollback: set `ROBLOSATS_TAG=0.9.10` again (no migrations).
 
 ### Upgrading to 0.9.10
 
