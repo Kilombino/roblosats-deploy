@@ -357,7 +357,7 @@ update, a dispute in progress too.
      and when a stuck one is replaced.
    - `ESCROW_DISPUTE_BOND_SAFETY_BLOCKS=144`: how many blocks before a bond's own timelock a
      disputed on-chain bond is penalized anyway (never more than a quarter of that timelock).
-   - `SPAMCHAIN_WATCH=True`, `SPAMCHAIN_ESPLORA_URL=https://mempool.space/api`,
+   - `SPAMCHAIN_WATCH=True`, `SPAMCHAIN_ESPLORA_URL` (empty: mempool.space's onion through Tor, else `https://mempool.space/api`),
      `SPAMCHAIN_WATCH_SECONDS=600`, `SPAMCHAIN_WATCH_DAYS=14`, `SPAMCHAIN_USE_TOR` (= `USE_TOR`):
      the wrong-chain watch below.
 3. Set `ROBLOSATS_TAG=0.9.12` in `compose.env` and run `./coordinator.sh <alias> up -d`
@@ -394,7 +394,7 @@ What changes:
   wallet of the other chain happily pays a bond or escrow funding address (Kilobot order #28: a
   30,000-sat bond paid with Spamcoin, never seen). A new celery beat task (`spamchain_watch`,
   every `SPAMCHAIN_WATCH_SECONDS`, 600) asks an Esplora API of the SHA-256 chain
-  (`SPAMCHAIN_ESPLORA_URL`, default `https://mempool.space/api`; through Tor when `USE_TOR`, or
+  (`SPAMCHAIN_ESPLORA_URL`, default mempool.space: its onion through Tor, since its clearnet site refuses most Tor exits; Tor when `USE_TOR`, or
   `SPAMCHAIN_USE_TOR`) about the addresses of on-chain bonds and escrow funding addresses still in
   play (`SPAMCHAIN_WATCH_DAYS`, 14). Each payment found there is logged on the order, the robot is
   told (Telegram/Nostr/webhook, en/es/ca) how to take it back, and you get a Telegram alert in the
